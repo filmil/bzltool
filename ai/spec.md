@@ -167,3 +167,13 @@ Requirements are built out iteratively, and are therefore enumeraed.
 ### R.11 Conflict Resolution and Overrides
 
 * The tool shall support an explicit prioritization model for template repositories, allowing a fragment in a higher-priority repository to completely overwrite or selectively replace fragments from lower-priority sources, instead of always concatenating them.
+
+### R.12 Automated Toolchains Setup
+
+* The tool shall utilize the `toolchains` array within the project configuration to automatically bootstrap language-specific toolchain definitions.
+* This involves generating or modifying build files (like `MODULE.bazel` or `WORKSPACE`) to download and register the requested toolchains at the specified versions.
+
+### R.13 GitHub Workflows Setup
+
+* The tool shall automatically scaffold standard CI/CD configurations inside the `.github/workflows/` directory.
+* These workflows should dynamically adapt to the project's requested `languages` and `toolchains`, configuring appropriate test environments, dependency caching, and build steps (e.g. `bazel test //...`).
