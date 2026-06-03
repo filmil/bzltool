@@ -19,3 +19,9 @@ func Execute() {
 		os.Exit(1)
 	}
 }
+
+// ExecuteWithArgs executes the root command with custom arguments for testing.
+func ExecuteWithArgs(args []string) error {
+	rootCmd.SetArgs(args)
+	return rootCmd.Execute()
+}
