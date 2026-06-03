@@ -6,9 +6,32 @@ import (
 	"path/filepath"
 )
 
-// Config represents the application configuration.
+// TemplateRepo represents a template repository source.
+type TemplateRepo struct {
+	URL    string `json:"url"`
+	Subdir string `json:"subdir,omitempty"`
+}
+
+// UnmarshalJSON implements custom JSON unmarshaling to support both string URLs and object structures.
+func (tr *TemplateRepo) UnmarshalJSON(data []byte) error {
+	var s string
+	if err := json.Unmarshal(data, &s); err == nil {
+		tr.URL = s
+		return nil
+	}
+
+	type Alias TemplateRepo
+	var a Alias
+	if err := json.Unmarshal(data, &a); err != nil {
+		return err
+	}
+	*tr = TemplateRepo(a)
+	return nil
+}
+
+// Config represents the user-level configuration stored in the XDG config directory.
 type Config struct {
-	TemplateRepos []string `json:"template_repos"`
+	TemplateRepos []TemplateRepo `json:"template_repos"`
 }
 
 // GetConfigDir returns the directory path where bzltool's configuration is stored, typically following XDG base directory specifications.

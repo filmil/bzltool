@@ -124,3 +124,58 @@ func TestE2E_JSONConfig(t *testing.T) {
 		t.Errorf("expected Project Name: JsonProject, got %s", string(content))
 	}
 }
+
+func TestE2E_SubdirConfig(t *testing.T) {
+	tmpDir, repoDir := setupTestEnvironment(t)
+	defer os.Unsetenv("XDG_CONFIG_HOME")
+
+	// Update XDG config to use a subdir object instead of a string
+	bzltoolConfigDir := filepath.Join(tmpDir, ".config", "bzltool")
+	// The repo actually doesn't have a "templates" subdir, the fragments are right at root ("01.core/fragments").
+	// So let's create a new structure in the repo.
+	
+	err := os.MkdirAll(filepath.Join(repoDir, "templates", "01.subdir", "fragments"), 0755)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = os.WriteFile(filepath.Join(repoDir, "templates", "01.subdir", "fragments", "SUBDIR.md"), []byte("Subdir Project: {{.ProjectName}}"), 0644)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	gitAdd := exec.Command("git", "add", ".")
+	gitAdd.Dir = repoDir
+	gitAdd.Run()
+
+	gitCommit := exec.Command("git", "-c", "user.name=Test", "-c", "user.email=test@example.com", "commit", "-m", "add templates subdir")
+	gitCommit.Dir = repoDir
+	gitCommit.Run()
+
+	configContent := `{"template_repos": [{"url": "` + repoDir + `", "subdir": "templates"}]}`
+	if err := os.WriteFile(filepath.Join(bzltoolConfigDir, "config.json"), []byte(configContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	workDir := filepath.Join(tmpDir, "workdir3")
+	if err := os.MkdirAll(workDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+	
+	originalWd, _ := os.Getwd()
+	os.Chdir(workDir)
+	defer os.Chdir(originalWd)
+
+	err = cmd.ExecuteWithArgs([]string{"init", "--project_name=SubdirProject", "--config="})
+	if err != nil {
+		t.Fatalf("ExecuteWithArgs failed: %v", err)
+	}
+
+	content, err := os.ReadFile(filepath.Join(workDir, "SUBDIR.md"))
+	if err != nil {
+		t.Fatalf("failed to read generated SUBDIR.md: %v", err)
+	}
+
+	if !strings.Contains(string(content), "Subdir Project: SubdirProject") {
+		t.Errorf("expected Subdir Project: SubdirProject, got %s", string(content))
+	}
+}
