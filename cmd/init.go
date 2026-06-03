@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strings"
 	"path/filepath"
 
 	"github.com/filmil/bzltool/internal/config"
@@ -16,6 +17,7 @@ import (
 var (
 	projectNameFlag string
 	configFlag      string
+	templateFlag    string
 )
 
 // Toolchain represents a project toolchain configuration.
@@ -26,19 +28,65 @@ type Toolchain struct {
 
 // Module represents a project module configuration.
 type Module struct {
-	Lang string `json:"lang"`
-	Name string `json:"name"`
-	Type string `json:"type,omitempty"`
+	Lang    string `json:"lang"`
+	Name    string `json:"name"`
+	Type    string `json:"type,omitempty"`
+	Version string `json:"version,omitempty"`
+}
+
+type InitSection struct {
+	ProjectName string      `json:"project_name"`
+	Languages   []string    `json:"languages,omitempty"`
+	Toolchains  []Toolchain `json:"toolchains,omitempty"`
+	Modules     []Module    `json:"modules,omitempty"`
+}
+
+var commonConfigs = map[string]InitSection{
+	"Standard Go Server": {
+		Languages:  []string{"go"},
+		Toolchains: []Toolchain{{Lang: "go", Version: "1.21"}},
+		Modules:    []Module{{Lang: "go", Name: "server"}},
+	},
+	"Python Data Science Project": {
+		Languages:  []string{"python"},
+		Toolchains: []Toolchain{{Lang: "python", Version: "3.11"}},
+		Modules:    []Module{{Lang: "python", Name: "data_science"}},
+	},
+	"C++ Library": {
+		Languages:  []string{"cpp"},
+		Toolchains: []Toolchain{{Lang: "cpp", Version: "17"}},
+		Modules:    []Module{{Lang: "cpp", Name: "lib"}},
+	},
+	"Protobuf": {
+		Languages: []string{"protobuf"},
+		Modules: []Module{
+			{Lang: "bcr", Name: "protobuf", Version: "35.0"},
+			{Lang: "bcr", Name: "rules_proto", Version: "7.1.0"},
+		},
+	},
+	"BCR: abseil-cpp": {
+		Modules: []Module{{Lang: "bcr", Name: "abseil-cpp", Version: "20260107.1"}},
+	},
+	"BCR: grpc": {
+		Modules: []Module{{Lang: "bcr", Name: "grpc", Version: "1.81.0"}},
+	},
+	"BCR: rules_cc": {
+		Modules: []Module{{Lang: "bcr", Name: "rules_cc", Version: "0.2.19"}},
+	},
+	"BCR: rules_go": {
+		Modules: []Module{{Lang: "bcr", Name: "rules_go", Version: "0.61.0"}},
+	},
+	"BCR: rules_python": {
+		Modules: []Module{{Lang: "bcr", Name: "rules_python", Version: "2.0.2"}},
+	},
+	"BCR: rules_rust": {
+		Modules: []Module{{Lang: "bcr", Name: "rules_rust", Version: "0.70.0"}},
+	},
 }
 
 // InitConfig represents the JSON configuration structure passed via --config.
 type InitConfig struct {
-	Init struct {
-		ProjectName string      `json:"project_name"`
-		Languages   []string    `json:"languages,omitempty"`
-		Toolchains  []Toolchain `json:"toolchains,omitempty"`
-		Modules     []Module    `json:"modules,omitempty"`
-	} `json:"init"`
+	Init InitSection `json:"init"`
 }
 
 // TemplateParams contains the parameters passed to text templates during fragment processing.
@@ -97,6 +145,45 @@ var initCmd = &cobra.Command{
 			}
 			if initCfg.Init.ProjectName != "" {
 				projName = initCfg.Init.ProjectName
+			}
+		} else {
+			templateStr := templateFlag
+			var selectedTemplates []string
+
+			// Only prompt for template interactively if neither flag was provided
+			if templateStr == "" && projName == "" {
+				// Launch TUI to pick a template
+				choices := []string{
+					"Standard Go Server", 
+					"Python Data Science Project", 
+					"C++ Library",
+					"Protobuf",
+					"BCR: abseil-cpp",
+					"BCR: grpc",
+					"BCR: rules_cc",
+					"BCR: rules_go",
+					"BCR: rules_python",
+					"BCR: rules_rust",
+				}
+				var err error
+				selectedTemplates, err = tui.PromptTemplates(choices)
+				if err != nil {
+					return err
+				}
+			} else if templateStr != "" {
+				for _, t := range strings.Split(templateStr, ",") {
+					selectedTemplates = append(selectedTemplates, strings.TrimSpace(t))
+				}
+			}
+
+			for _, templateName := range selectedTemplates {
+				if common, ok := commonConfigs[templateName]; ok {
+					initCfg.Init.Languages = append(initCfg.Init.Languages, common.Languages...)
+					initCfg.Init.Toolchains = append(initCfg.Init.Toolchains, common.Toolchains...)
+					initCfg.Init.Modules = append(initCfg.Init.Modules, common.Modules...)
+				} else {
+					return fmt.Errorf("unknown template: %s", templateName)
+				}
 			}
 		}
 

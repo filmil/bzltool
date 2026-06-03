@@ -77,3 +77,80 @@ func PromptProjectName() (string, error) {
 
 	return "", fmt.Errorf("project name input was aborted")
 }
+
+// selectModel provides a TUI multiselect list
+type selectModel struct {
+	choices  []string
+	cursor   int
+	selected map[int]bool
+	done     bool
+	err      error
+}
+
+func (m selectModel) Init() tea.Cmd { return nil }
+
+func (m selectModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "ctrl+c", "q", "esc":
+			return m, tea.Quit
+		case "up", "k":
+			if m.cursor > 0 {
+				m.cursor--
+			}
+		case "down", "j":
+			if m.cursor < len(m.choices)-1 {
+				m.cursor++
+			}
+		case " ":
+			m.selected[m.cursor] = !m.selected[m.cursor]
+		case "enter":
+			m.done = true
+			return m, tea.Quit
+		}
+	case error:
+		m.err = msg
+		return m, nil
+	}
+	return m, nil
+}
+
+func (m selectModel) View() string {
+	if m.done {
+		return ""
+	}
+	s := "Select configuration templates (Space to toggle, Enter to confirm):\n\n"
+	for i, choice := range m.choices {
+		cursor := " "
+		if m.cursor == i {
+			cursor = ">"
+		}
+		checked := " "
+		if m.selected[i] {
+			checked = "x"
+		}
+		s += fmt.Sprintf("%s [%s] %s\n", cursor, checked, choice)
+	}
+	s += "\n(press enter to confirm, esc to quit)\n"
+	return s
+}
+
+// PromptTemplates uses bubbletea to prompt the user to select multiple options.
+func PromptTemplates(choices []string) ([]string, error) {
+	p := tea.NewProgram(selectModel{choices: choices, selected: make(map[int]bool)})
+	m, err := p.Run()
+	if err != nil {
+		return nil, err
+	}
+	if finalModel, ok := m.(selectModel); ok && finalModel.done {
+		var selected []string
+		for i, choice := range finalModel.choices {
+			if finalModel.selected[i] {
+				selected = append(selected, choice)
+			}
+		}
+		return selected, nil
+	}
+	return nil, fmt.Errorf("template selection was aborted")
+}
