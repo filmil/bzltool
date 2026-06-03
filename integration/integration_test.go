@@ -34,7 +34,7 @@ func setupTestEnvironment(t *testing.T) (string, string) {
 	}
 
 	// Write a template.json to repo root
-	templateJSON := `{"ignore": ["ignored.txt", "ignored_dir/"], "raw": ["*.sh"], "conditions": {"python": ["*.py"]}, "merge_strategies": {"*.json": "json_deep_merge"}}`
+	templateJSON := `{"ignore": ["ignored.txt", "ignored_dir/"], "raw": ["*.sh"], "conditions": {"python": ["*.py"]}, "merge_strategies": {"*.json": "json_deep_merge"}, "hooks": {"post_merge": [["touch", "hook_ran.txt"]]}}`
 	if err := os.WriteFile(filepath.Join(repoDir, "template.json"), []byte(templateJSON), 0644); err != nil {
 		t.Fatal(err)
 	}
@@ -191,6 +191,11 @@ func TestE2E_JSONConfig(t *testing.T) {
 	}
 	if !strings.Contains(string(content), `"a": 1`) || !strings.Contains(string(content), `"c": 2`) || !strings.Contains(string(content), `"d": 3`) || !strings.Contains(string(content), `"e": "JsonProject"`) {
 		t.Errorf("JSON deep merge failed. Got: %s", string(content))
+	}
+
+	// Verify post_merge hook ran
+	if _, err := os.Stat(filepath.Join(workDir, "hook_ran.txt")); os.IsNotExist(err) {
+		t.Errorf("hook_ran.txt was not created, meaning post_merge hook did not run")
 	}
 }
 
