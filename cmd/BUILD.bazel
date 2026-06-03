@@ -12,6 +12,7 @@ go_library(
         "//internal/config",
         "//internal/git",
         "//internal/template",
+        "//internal/tui",
         "@com_github_spf13_cobra//:cobra",
     ],
 )

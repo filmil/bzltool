@@ -1,0 +1,12 @@
+load("@rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "tui",
+    srcs = ["tui.go"],
+    importpath = "github.com/filmil/bzltool/internal/tui",
+    visibility = ["//:__subpackages__"],
+    deps = [
+        "@com_github_charmbracelet_bubbles//textinput",
+        "@com_github_charmbracelet_bubbletea//:bubbletea",
+    ],
+)

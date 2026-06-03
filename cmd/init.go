@@ -9,6 +9,7 @@ import (
 	"github.com/filmil/bzltool/internal/config"
 	"github.com/filmil/bzltool/internal/git"
 	"github.com/filmil/bzltool/internal/template"
+	"github.com/filmil/bzltool/internal/tui"
 	"github.com/spf13/cobra"
 )
 
@@ -75,6 +76,14 @@ var initCmd = &cobra.Command{
 			}
 			if initCfg.Init.ProjectName != "" {
 				projName = initCfg.Init.ProjectName
+			}
+		}
+
+		if projName == "" {
+			var err error
+			projName, err = tui.PromptProjectName()
+			if err != nil {
+				return err
 			}
 		}
 
