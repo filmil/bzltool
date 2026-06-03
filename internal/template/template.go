@@ -11,8 +11,9 @@ import (
 )
 
 type TemplateConfig struct {
-	Ignore []string `json:"ignore"`
-	Raw    []string `json:"raw"`
+	Ignore     []string            `json:"ignore"`
+	Raw        []string            `json:"raw"`
+	Conditions map[string][]string `json:"conditions"`
 }
 
 func matchesAny(relPath string, patterns []string) bool {
@@ -42,9 +43,14 @@ func loadTemplateConfig(repoDir string) TemplateConfig {
 // repository directories, sorts them alphanumerically, and evaluates all found
 // file templates into the destDir directory using the provided parameters.
 // Files with the same relative path are concatenated prior to evaluation.
-func ProcessFragments(repoDirs []string, destDir string, params interface{}) error {
+// activeConditions controls which conditionally-included fragments are evaluated.
+func ProcessFragments(repoDirs []string, destDir string, params interface{}, activeConditions []string) error {
 	var fragmentDirs []string
 	configs := make(map[string]TemplateConfig)
+	activeCondMap := make(map[string]bool)
+	for _, c := range activeConditions {
+		activeCondMap[c] = true
+	}
 
 	for _, repoDir := range repoDirs {
 		configs[repoDir] = loadTemplateConfig(repoDir)
@@ -87,6 +93,20 @@ func ProcessFragments(repoDirs []string, destDir string, params interface{}) err
 
 			if matchesAny(relPath, cfg.Ignore) {
 				return nil // Skip ignored file
+			}
+
+			// Check conditionals
+			skipConditionally := false
+			for condName, patterns := range cfg.Conditions {
+				if matchesAny(relPath, patterns) {
+					if !activeCondMap[condName] {
+						skipConditionally = true
+						break
+					}
+				}
+			}
+			if skipConditionally {
+				return nil
 			}
 
 			content, err := os.ReadFile(path)
