@@ -131,3 +131,9 @@ Requirements are built out iteratively, and are therefore enumeraed.
 * During initialization, the tool shall persist the supplied or TUI-gathered project configuration (e.g. `languages`, `toolchains`, `modules`) into a `.config/bzltool/` directory located at the root of the initialized project.
 * This configuration shall map exactly to the JSON structure demonstrated in the preamble.
 * The `.config/bzltool/` directory will act as the source of truth for the project's current state, allowing subsequent commands (like `bzltool commit`) to sync changes from this directory into the project files.
+
+### R.5 Template Repository Subdirectories
+
+* The user-level XDG configuration file shall support specifying an optional subdirectory for each configured template repository.
+* When a subdirectory is specified, the tool shall use that subdirectory as the root for discovering the `fragments/` and `skills/` directories, rather than the root of the checked-out git repository.
+* This allows template definitions to be neatly contained in folders (e.g. `//templates`) alongside other project code without cluttering the repository root.
