@@ -101,9 +101,9 @@ Requirements are built out iteratively, and are therefore enumeraed.
   allowed for them to have access to project parameters as a struct for
   substitution.
 
-* The program shall have a JSON config file stored based on XDG standards.
+* The program shall have a user-level JSON config file stored in the per-user XDG configuration directory (e.g., `~/.config/bzltool/config.json`).
 
-* The config shall name a list of git repository sources which will be used
+* The user-level config shall name a list of git repository sources which will be used
   as template repos. Multiple can be allowed, and the program shall shell out
   to git to check them out into the config dir.
 
