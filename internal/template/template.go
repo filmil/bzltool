@@ -205,6 +205,19 @@ func ProcessFragments(repoDirs []string, destDir string, params interface{}, act
 			if err != nil {
 				return err
 			}
+		} else if strategy == "override" {
+			// Take the last fragment (highest priority)
+			frag := fragments[len(fragments)-1]
+			tmpl, err := template.New(relPath).Parse(frag)
+			if err != nil {
+				return err
+			}
+
+			var buf bytes.Buffer
+			if err := tmpl.Execute(&buf, params); err != nil {
+				return err
+			}
+			finalContent = buf.Bytes()
 		} else {
 			var combined string
 			for _, frag := range fragments {

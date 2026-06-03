@@ -34,7 +34,7 @@ func setupTestEnvironment(t *testing.T) (string, string) {
 	}
 
 	// Write a template.json to repo root
-	templateJSON := `{"ignore": ["ignored.txt", "ignored_dir/"], "raw": ["*.sh"], "conditions": {"python": ["*.py"]}, "merge_strategies": {"*.json": "json_deep_merge"}, "hooks": {"post_merge": [["touch", "hook_ran.txt"]]}}`
+	templateJSON := `{"ignore": ["ignored.txt", "ignored_dir/"], "raw": ["*.sh"], "conditions": {"python": ["*.py"]}, "merge_strategies": {"*.json": "json_deep_merge", "*.yaml": "override"}, "hooks": {"post_merge": [["touch", "hook_ran.txt"]]}}`
 	if err := os.WriteFile(filepath.Join(repoDir, "template.json"), []byte(templateJSON), 0644); err != nil {
 		t.Fatal(err)
 	}
@@ -68,6 +68,14 @@ func setupTestEnvironment(t *testing.T) (string, string) {
 		t.Fatal(err)
 	}
 	if err := os.WriteFile(filepath.Join(repoDir, "02.ext", "fragments", "test.json"), []byte(`{"b": {"d": 3}, "e": "{{.ProjectName}}"}`), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Two yaml fragments to override
+	if err := os.WriteFile(filepath.Join(repoDir, "01.core", "fragments", "test.yaml"), []byte("first: 1"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(repoDir, "02.ext", "fragments", "test.yaml"), []byte("second: 2"), 0644); err != nil {
 		t.Fatal(err)
 	}
 
@@ -191,6 +199,15 @@ func TestE2E_JSONConfig(t *testing.T) {
 	}
 	if !strings.Contains(string(content), `"a": 1`) || !strings.Contains(string(content), `"c": 2`) || !strings.Contains(string(content), `"d": 3`) || !strings.Contains(string(content), `"e": "JsonProject"`) {
 		t.Errorf("JSON deep merge failed. Got: %s", string(content))
+	}
+
+	// Verify override YAML
+	content, err = os.ReadFile(filepath.Join(workDir, "test.yaml"))
+	if err != nil {
+		t.Fatalf("failed to read test.yaml: %v", err)
+	}
+	if string(content) != "second: 2" {
+		t.Errorf("expected override to give 'second: 2', got: %s", string(content))
 	}
 
 	// Verify post_merge hook ran
