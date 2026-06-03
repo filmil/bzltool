@@ -137,3 +137,9 @@ Requirements are built out iteratively, and are therefore enumeraed.
 * The user-level XDG configuration file shall support specifying an optional subdirectory for each configured template repository.
 * When a subdirectory is specified, the tool shall use that subdirectory as the root for discovering the `fragments/` and `skills/` directories, rather than the root of the checked-out git repository.
 * This allows template definitions to be neatly contained in folders (e.g. `//templates`) alongside other project code without cluttering the repository root.
+
+### R.6 Health Subcommand
+
+* The tool shall provide a `health` subcommand (`bzltool health`).
+* The `health` subcommand shall verify that all necessary external executable dependencies (such as `bazel` and `git`) are present in the user's `PATH`.
+* The command shall output a clear "bill of health" report to the user, identifying which tools are successfully located and which are missing.
