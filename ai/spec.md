@@ -125,3 +125,9 @@ Requirements are built out iteratively, and are therefore enumeraed.
 * If not all required project configuration fields are provided via flags or JSON configuration, the tool shall launch a TUI.
 * The TUI shall be implemented using the Bubbletea library.
 * The TUI shall interactively prompt the user to populate any missing configuration fields before proceeding with initialization.
+
+### R.4 Project Configuration Storage
+
+* During initialization, the tool shall persist the supplied or TUI-gathered project configuration (e.g. `languages`, `toolchains`, `modules`) into a `.config/bzltool/` directory located at the root of the initialized project.
+* This configuration shall map exactly to the JSON structure demonstrated in the preamble.
+* The `.config/bzltool/` directory will act as the source of truth for the project's current state, allowing subsequent commands (like `bzltool commit`) to sync changes from this directory into the project files.
