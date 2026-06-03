@@ -44,6 +44,9 @@ type InitConfig struct {
 // TemplateParams contains the parameters passed to text templates during fragment processing.
 type TemplateParams struct {
 	ProjectName string
+	Languages   []string
+	Toolchains  []Toolchain
+	Modules     []Module
 }
 
 var initCmd = &cobra.Command{
@@ -113,6 +116,9 @@ var initCmd = &cobra.Command{
 
 		params := TemplateParams{
 			ProjectName: projName,
+			Languages:   initCfg.Init.Languages,
+			Toolchains:  initCfg.Init.Toolchains,
+			Modules:     initCfg.Init.Modules,
 		}
 
 		// Persist the configuration to the project directory
