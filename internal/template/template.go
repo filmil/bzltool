@@ -3,7 +3,9 @@ package template
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -13,10 +15,11 @@ import (
 )
 
 type TemplateConfig struct {
-	Ignore          []string            `json:"ignore"`
-	Raw             []string            `json:"raw"`
-	Conditions      map[string][]string `json:"conditions"`
-	MergeStrategies map[string]string   `json:"merge_strategies"`
+	Ignore          []string                `json:"ignore"`
+	Raw             []string                `json:"raw"`
+	Conditions      map[string][]string     `json:"conditions"`
+	MergeStrategies map[string]string       `json:"merge_strategies"`
+	Hooks           map[string][][]string   `json:"hooks"`
 }
 
 func deepMergeMap(dest, src map[string]interface{}) map[string]interface{} {
@@ -238,6 +241,39 @@ func ProcessFragments(repoDirs []string, destDir string, params interface{}, act
 
 		if err := os.WriteFile(outPath, rawContent, 0644); err != nil {
 			return err
+		}
+	}
+
+	// Execute post_merge hooks
+	for _, cfg := range configs {
+		if postMergeHooks, ok := cfg.Hooks["post_merge"]; ok {
+			for _, hookCmd := range postMergeHooks {
+				if len(hookCmd) == 0 {
+					continue
+				}
+
+				// Basic templating on hook arguments to support {{.ProjectName}}
+				var templatedArgs []string
+				for _, arg := range hookCmd {
+					tmpl, err := template.New("hook").Parse(arg)
+					if err == nil {
+						var buf bytes.Buffer
+						if tmpl.Execute(&buf, params) == nil {
+							templatedArgs = append(templatedArgs, buf.String())
+							continue
+						}
+					}
+					templatedArgs = append(templatedArgs, arg)
+				}
+
+				cmd := exec.Command(templatedArgs[0], templatedArgs[1:]...)
+				cmd.Dir = destDir
+				cmd.Stdout = os.Stdout
+				cmd.Stderr = os.Stderr
+				if err := cmd.Run(); err != nil {
+					return fmt.Errorf("hook %v failed: %w", hookCmd, err)
+				}
+			}
 		}
 	}
 

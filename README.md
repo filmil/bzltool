@@ -59,6 +59,7 @@ Template repositories can include a `template.json` at their root to control fil
 - `raw`: Files matching these patterns will be copied verbatim, bypassing the Go text templating engine (useful to avoid `{{ }}` conflicts in shell scripts).
 - `conditions`: Files matching these patterns are conditionally included ONLY if the project configuration explicitly requests that language or toolchain.
 - `merge_strategies`: Controls how multiple files at the same path are merged. Supports `json_deep_merge` and `yaml_deep_merge`. If unspecified, fragments are concatenated.
+- `hooks`: Defines an array of shell commands to run at specific stages. Currently supports `post_merge` which will execute commands from the initialized project's root path after all templates are evaluated. Templating variables like `{{.ProjectName}}` can be injected into the hook arguments.
 
 ## Building and Testing
 
