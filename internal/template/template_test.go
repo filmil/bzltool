@@ -46,15 +46,11 @@ func TestProcessFragments(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	params := struct {
-		ProjectName string
-	}{
-		ProjectName: "World",
-	}
+	params := struct{ ProjectName string }{ProjectName: "World"}
 
-	err = template.ProcessFragments([]string{repoDir}, destDir, params)
+	err = template.ProcessFragments([]string{repoDir}, destDir, params, nil)
 	if err != nil {
-		t.Fatalf("expected no error, got %v", err)
+		t.Fatalf("ProcessFragments failed: %v", err)
 	}
 
 	// Verify merged content

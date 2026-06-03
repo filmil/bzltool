@@ -130,7 +130,22 @@ var initCmd = &cobra.Command{
 			return fmt.Errorf("failed to write project config: %w", err)
 		}
 
-		if err := template.ProcessFragments(checkedOutDirs, cwd, params); err != nil {
+		activeConds := make(map[string]bool)
+		for _, l := range initCfg.Init.Languages {
+			activeConds[l] = true
+		}
+		for _, t := range initCfg.Init.Toolchains {
+			activeConds[t.Lang] = true
+		}
+		for _, m := range initCfg.Init.Modules {
+			activeConds[m.Lang] = true
+		}
+		var activeConditions []string
+		for k := range activeConds {
+			activeConditions = append(activeConditions, k)
+		}
+
+		if err := template.ProcessFragments(checkedOutDirs, cwd, params, activeConditions); err != nil {
 			return err
 		}
 
