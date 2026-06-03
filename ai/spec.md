@@ -108,3 +108,10 @@ Requirements are built out iteratively, and are therefore enumeraed.
   to git to check them out into the config dir.
 
 * For language setups, we will for the time being use `fragments` dir.
+
+### R.2 Project Name Injection
+
+* The `init` command shall accept a `--project_name` string flag.
+* Alternatively, the user can supply the project configuration as a JSON structure via a flag (e.g., `--config`), which includes `project_name` under the `init` key, matching the preamble example.
+* The tool shall make the `project_name` parameter available to the text templates in the `params` struct (e.g. as `{{.ProjectName}}`) during fragment generation.
+* Update existing code to pass this project name into the template execution.

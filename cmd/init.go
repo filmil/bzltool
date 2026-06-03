@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -10,6 +11,23 @@ import (
 	"github.com/filmil/bzltool/internal/template"
 	"github.com/spf13/cobra"
 )
+
+var (
+	projectNameFlag string
+	configFlag      string
+)
+
+// InitConfig represents the JSON configuration structure passed via --config.
+type InitConfig struct {
+	Init struct {
+		ProjectName string `json:"project_name"`
+	} `json:"init"`
+}
+
+// TemplateParams contains the parameters passed to text templates during fragment processing.
+type TemplateParams struct {
+	ProjectName string
+}
 
 var initCmd = &cobra.Command{
 	Use:   "init",
@@ -44,7 +62,25 @@ var initCmd = &cobra.Command{
 			return err
 		}
 
-		params := struct{}{}
+		projName := projectNameFlag
+
+		if configFlag != "" {
+			data, err := os.ReadFile(configFlag)
+			if err != nil {
+				return fmt.Errorf("failed to read config file: %w", err)
+			}
+			var initCfg InitConfig
+			if err := json.Unmarshal(data, &initCfg); err != nil {
+				return fmt.Errorf("failed to parse config file: %w", err)
+			}
+			if initCfg.Init.ProjectName != "" {
+				projName = initCfg.Init.ProjectName
+			}
+		}
+
+		params := TemplateParams{
+			ProjectName: projName,
+		}
 
 		if err := template.ProcessFragments(checkedOutDirs, cwd, params); err != nil {
 			return err
@@ -55,5 +91,7 @@ var initCmd = &cobra.Command{
 }
 
 func init() {
+	initCmd.Flags().StringVar(&projectNameFlag, "project_name", "", "Name of the project to initialize")
+	initCmd.Flags().StringVar(&configFlag, "config", "", "Path to the JSON configuration file")
 	rootCmd.AddCommand(initCmd)
 }

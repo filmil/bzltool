@@ -8,7 +8,10 @@ import (
 	"text/template"
 )
 
-// ProcessFragments searches for 'fragments' directories within the provided repository directories, sorts them alphanumerically, and evaluates all found file templates into the destDir directory using the provided parameters. Files with the same relative path are concatenated prior to evaluation.
+// ProcessFragments searches for 'fragments' directories within the provided
+// repository directories, sorts them alphanumerically, and evaluates all found
+// file templates into the destDir directory using the provided parameters.
+// Files with the same relative path are concatenated prior to evaluation.
 func ProcessFragments(repoDirs []string, destDir string, params interface{}) error {
 	var fragmentDirs []string
 	for _, repoDir := range repoDirs {

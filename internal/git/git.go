@@ -8,7 +8,9 @@ import (
 	gogit "github.com/go-git/go-git/v5"
 )
 
-// CheckoutRepos checks out a list of git repositories to the specified destination directory. If a repository already exists in the destination, it pulls the latest changes from the origin remote.
+// CheckoutRepos checks out a list of git repositories to the specified
+// destination directory. If a repository already exists in the destination, it
+// pulls the latest changes from the origin remote.
 func CheckoutRepos(repos []string, destDir string) error {
 	for i, repoURL := range repos {
 		dir := filepath.Join(destDir, fmt.Sprintf("repo_%d", i))

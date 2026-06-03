@@ -17,7 +17,7 @@ func TestProcessFragments(t *testing.T) {
 	// repo/
 	//   01.dir1/
 	//     fragments/
-	//       file1.txt (content: "Hello {{.Name}}")
+	//       file1.txt (content: "Hello {{.ProjectName}}")
 	//   02.dir2/
 	//     fragments/
 	//       file1.txt (content: "!")
@@ -33,7 +33,7 @@ func TestProcessFragments(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = os.WriteFile(filepath.Join(repoDir, "01.dir1", "fragments", "file1.txt"), []byte("Hello {{.Name}}"), 0644)
+	err = os.WriteFile(filepath.Join(repoDir, "01.dir1", "fragments", "file1.txt"), []byte("Hello {{.ProjectName}}"), 0644)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -47,9 +47,9 @@ func TestProcessFragments(t *testing.T) {
 	}
 
 	params := struct {
-		Name string
+		ProjectName string
 	}{
-		Name: "World",
+		ProjectName: "World",
 	}
 
 	err = template.ProcessFragments([]string{repoDir}, destDir, params)
