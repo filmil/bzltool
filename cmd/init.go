@@ -65,13 +65,18 @@ var initCmd = &cobra.Command{
 			return err
 		}
 
-		if err := git.CheckoutRepos(cfg.TemplateRepos, reposDir); err != nil {
+		var repoUrls []string
+		for _, repo := range cfg.TemplateRepos {
+			repoUrls = append(repoUrls, repo.URL)
+		}
+
+		if err := git.CheckoutRepos(repoUrls, reposDir); err != nil {
 			return err
 		}
 
 		var checkedOutDirs []string
-		for i := range cfg.TemplateRepos {
-			checkedOutDirs = append(checkedOutDirs, filepath.Join(reposDir, fmt.Sprintf("repo_%d", i)))
+		for i, repo := range cfg.TemplateRepos {
+			checkedOutDirs = append(checkedOutDirs, filepath.Join(reposDir, fmt.Sprintf("repo_%d", i), repo.Subdir))
 		}
 
 		cwd, err := os.Getwd()
