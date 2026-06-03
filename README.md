@@ -58,6 +58,7 @@ Template repositories can include a `template.json` at their root to control fil
 - `ignore`: Files matching these patterns will never be copied.
 - `raw`: Files matching these patterns will be copied verbatim, bypassing the Go text templating engine (useful to avoid `{{ }}` conflicts in shell scripts).
 - `conditions`: Files matching these patterns are conditionally included ONLY if the project configuration explicitly requests that language or toolchain.
+- `merge_strategies`: Controls how multiple files at the same path are merged. Supports `json_deep_merge` and `yaml_deep_merge`. If unspecified, fragments are concatenated.
 
 ## Building and Testing
 
