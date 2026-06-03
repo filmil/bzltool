@@ -12,6 +12,37 @@
 - **XDG Standards**: Global repository configurations are managed elegantly via per-user `.config/` XDG standard directories.
 - **Project Workspaces**: Local project states are continuously saved in `.config/bzltool/project_config.json`, empowering synchronized updates and AI tooling interaction.
 
+## Usage
+
+**Global Configuration**
+Before running `bzltool`, create your global configuration detailing where templates should be fetched from:
+```bash
+mkdir -p ~/.config/bzltool
+cat <<EOF > ~/.config/bzltool/config.json
+{
+  "template_repos": [
+    {
+      "url": "https://github.com/my-org/my-templates.git",
+      "subdir": "templates"
+    }
+  ]
+}
+EOF
+```
+
+**Project Initialization**
+Initialize a new project in the current directory. You can pass the project name via flag:
+```bash
+bzltool init --project_name="My Awesome Project"
+```
+
+Alternatively, you can provide a full JSON configuration (which sets languages, toolchains, and modules):
+```bash
+bzltool init --config=my_config.json
+```
+
+If neither is provided or data is missing, an interactive TUI will gracefully prompt you for the necessary information.
+
 ## Building and Testing
 
 This project leverages Bazel (`MODULE.bazel`) for all builds and tests to ensure reproducible environments. 
