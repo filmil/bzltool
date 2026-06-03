@@ -177,3 +177,8 @@ Requirements are built out iteratively, and are therefore enumeraed.
 
 * The tool shall automatically scaffold standard CI/CD configurations inside the `.github/workflows/` directory.
 * These workflows should dynamically adapt to the project's requested `languages` and `toolchains`, configuring appropriate test environments, dependency caching, and build steps (e.g. `bazel test //...`).
+
+### R.14 Common Configurations for Init
+
+* The `init` command shall offer a set of common, pre-defined configuration templates (e.g., "Standard Go Server", "Python Data Science Project", "C++ Library") for users to choose from when initializing a new project interactively or via flags.
+* These common configurations should bundle sensible defaults for `languages`, `toolchains`, and `modules` to reduce friction and eliminate the need for verbose JSON configuration for standard project types.
