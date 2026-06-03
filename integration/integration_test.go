@@ -179,3 +179,15 @@ func TestE2E_SubdirConfig(t *testing.T) {
 		t.Errorf("expected Subdir Project: SubdirProject, got %s", string(content))
 	}
 }
+
+func TestE2E_Health(t *testing.T) {
+	// Execute health command
+	err := cmd.ExecuteWithArgs([]string{"health"})
+	// In the bazel sandbox, `bazel` might not be in PATH, so it may fail.
+	// We just ensure it executed the command logic without panicking.
+	if err != nil {
+		if err.Error() != "health check failed" {
+			t.Fatalf("Expected health check failed error in sandbox, got: %v", err)
+		}
+	}
+}
