@@ -43,6 +43,12 @@ bzltool init --config=my_config.json
 
 If neither is provided or data is missing, an interactive TUI will gracefully prompt you for the necessary information.
 
+**Health Check**
+You can verify that your system has all required dependencies (like `git` and `bazel`) installed and available in your `PATH` by running:
+```bash
+bzltool health
+```
+
 ## Building and Testing
 
 This project leverages Bazel (`MODULE.bazel`) for all builds and tests to ensure reproducible environments. 
