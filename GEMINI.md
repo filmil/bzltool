@@ -51,6 +51,8 @@ arise.
   ```
 - Additionally, append the exact prompt used to generate the commit in full.
 
+* Add a report of what is implemented to README.md whenever something is
+  modified.
 
 ## Rebase and Merges
 

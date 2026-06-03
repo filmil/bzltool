@@ -143,3 +143,27 @@ Requirements are built out iteratively, and are therefore enumeraed.
 * The tool shall provide a `health` subcommand (`bzltool health`).
 * The `health` subcommand shall verify that all necessary external executable dependencies (such as `bazel` and `git`) are present in the user's `PATH`.
 * The command shall output a clear "bill of health" report to the user, identifying which tools are successfully located and which are missing.
+
+### R.7 File Exclusions and Raw Copying
+
+* The tool shall support a mechanism (e.g., `.bzltoolignore` or a `template.json` directive) to specify files or directories that should be entirely ignored.
+* The tool shall allow marking specific files as "raw" to bypass the Go text templating engine, preventing syntax conflicts in files containing `{{ }}` delimiters (e.g., shell scripts, configuration files of other tools, or binary assets).
+
+### R.8 Conditional Fragments
+
+* The tool shall support conditional inclusion of fragments based on the project configuration.
+* For example, fragments related to a specific language or toolchain should only be evaluated and merged into the project if that language or toolchain is explicitly requested in the JSON configuration.
+
+### R.9 Advanced Merge Strategies
+
+* Beyond simple alphanumeric concatenation, the tool shall allow specifying custom merge strategies based on file extensions or configuration.
+* For example, it should support deep-merging JSON dictionaries (e.g., `package.json`) or YAML objects, rather than blindly concatenating them.
+
+### R.10 Pre- and Post-Execution Hooks
+
+* The tool shall allow template repositories to define executable hooks (e.g., `hooks/post-generate.sh`) that run automatically at specific lifecycle stages.
+* A post-execution hook could be used to format code (e.g., `gofmt`, `buildifier`), resolve dependencies (`go mod tidy`), or execute initial builds (`bazel build //...`).
+
+### R.11 Conflict Resolution and Overrides
+
+* The tool shall support an explicit prioritization model for template repositories, allowing a fragment in a higher-priority repository to completely overwrite or selectively replace fragments from lower-priority sources, instead of always concatenating them.
