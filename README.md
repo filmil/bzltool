@@ -43,6 +43,22 @@ bzltool init --config=my_config.json
 
 If neither is provided or data is missing, an interactive TUI will gracefully prompt you for the necessary information.
 
+**Template Configuration (`template.json`)**
+Template repositories can include a `template.json` at their root to control file merging behaviors:
+```json
+{
+  "ignore": ["**/.DS_Store", "**/node_modules/**"],
+  "raw": ["*.sh", "Makefile"],
+  "conditions": {
+    "python": ["**/python/**"],
+    "go": ["**/go/**"]
+  }
+}
+```
+- `ignore`: Files matching these patterns will never be copied.
+- `raw`: Files matching these patterns will be copied verbatim, bypassing the Go text templating engine (useful to avoid `{{ }}` conflicts in shell scripts).
+- `conditions`: Files matching these patterns are conditionally included ONLY if the project configuration explicitly requests that language or toolchain.
+
 ## Building and Testing
 
 This project leverages Bazel (`MODULE.bazel`) for all builds and tests to ensure reproducible environments. 
