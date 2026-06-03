@@ -8,12 +8,36 @@ import (
 	"sort"
 	"strings"
 	"text/template"
+
+	"gopkg.in/yaml.v3"
 )
 
 type TemplateConfig struct {
-	Ignore     []string            `json:"ignore"`
-	Raw        []string            `json:"raw"`
-	Conditions map[string][]string `json:"conditions"`
+	Ignore          []string            `json:"ignore"`
+	Raw             []string            `json:"raw"`
+	Conditions      map[string][]string `json:"conditions"`
+	MergeStrategies map[string]string   `json:"merge_strategies"`
+}
+
+func deepMergeMap(dest, src map[string]interface{}) map[string]interface{} {
+	if dest == nil {
+		dest = make(map[string]interface{})
+	}
+	for k, v := range src {
+		if srcMap, ok := v.(map[string]interface{}); ok {
+			if destMap, ok := dest[k].(map[string]interface{}); ok {
+				dest[k] = deepMergeMap(destMap, srcMap)
+				continue
+			}
+		} else if srcArr, ok := v.([]interface{}); ok {
+			if destArr, ok := dest[k].([]interface{}); ok {
+				dest[k] = append(destArr, srcArr...)
+				continue
+			}
+		}
+		dest[k] = v
+	}
+	return dest
 }
 
 func matchesAny(relPath string, patterns []string) bool {
@@ -48,6 +72,7 @@ func ProcessFragments(repoDirs []string, destDir string, params interface{}, act
 	var fragmentDirs []string
 	configs := make(map[string]TemplateConfig)
 	activeCondMap := make(map[string]bool)
+	strategyMap := make(map[string]string)
 	for _, c := range activeConditions {
 		activeCondMap[c] = true
 	}
@@ -114,6 +139,13 @@ func ProcessFragments(repoDirs []string, destDir string, params interface{}, act
 				return err
 			}
 
+			// Track merge strategy
+			for pattern, strat := range cfg.MergeStrategies {
+				if matchesAny(relPath, []string{pattern}) {
+					strategyMap[relPath] = strat
+				}
+			}
+
 			if matchesAny(relPath, cfg.Raw) {
 				// Raw files overwrite previous raw files (no concatenation)
 				rawMap[relPath] = content
@@ -128,19 +160,64 @@ func ProcessFragments(repoDirs []string, destDir string, params interface{}, act
 	}
 
 	for relPath, fragments := range fragmentsMap {
-		var combined string
-		for _, frag := range fragments {
-			combined += frag
-		}
+		var finalContent []byte
+		strategy := strategyMap[relPath]
 
-		tmpl, err := template.New(relPath).Parse(combined)
-		if err != nil {
-			return err
-		}
+		if strategy == "json_deep_merge" || strategy == "yaml_deep_merge" {
+			var mergedMap map[string]interface{}
+			for _, frag := range fragments {
+				tmpl, err := template.New(relPath).Parse(frag)
+				if err != nil {
+					return err
+				}
+				var buf bytes.Buffer
+				if err := tmpl.Execute(&buf, params); err != nil {
+					return err
+				}
 
-		var buf bytes.Buffer
-		if err := tmpl.Execute(&buf, params); err != nil {
-			return err
+				var currentMap map[string]interface{}
+				if strategy == "json_deep_merge" {
+					if err := json.Unmarshal(buf.Bytes(), &currentMap); err != nil {
+						return err
+					}
+				} else {
+					if err := yaml.Unmarshal(buf.Bytes(), &currentMap); err != nil {
+						return err
+					}
+				}
+
+				if mergedMap == nil {
+					mergedMap = currentMap
+				} else {
+					mergedMap = deepMergeMap(mergedMap, currentMap)
+				}
+			}
+
+			var err error
+			if strategy == "json_deep_merge" {
+				finalContent, err = json.MarshalIndent(mergedMap, "", "  ")
+			} else {
+				finalContent, err = yaml.Marshal(mergedMap)
+			}
+			if err != nil {
+				return err
+			}
+		} else {
+			var combined string
+			for _, frag := range fragments {
+				combined += frag
+			}
+
+			tmpl, err := template.New(relPath).Parse(combined)
+			if err != nil {
+				return err
+			}
+
+			var buf bytes.Buffer
+			if err := tmpl.Execute(&buf, params); err != nil {
+				return err
+			}
+			finalContent = buf.Bytes()
 		}
 
 		outPath := filepath.Join(destDir, relPath)
@@ -148,7 +225,7 @@ func ProcessFragments(repoDirs []string, destDir string, params interface{}, act
 			return err
 		}
 
-		if err := os.WriteFile(outPath, buf.Bytes(), 0644); err != nil {
+		if err := os.WriteFile(outPath, finalContent, 0644); err != nil {
 			return err
 		}
 	}

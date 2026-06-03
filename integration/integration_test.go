@@ -34,7 +34,7 @@ func setupTestEnvironment(t *testing.T) (string, string) {
 	}
 
 	// Write a template.json to repo root
-	templateJSON := `{"ignore": ["ignored.txt", "ignored_dir/"], "raw": ["*.sh"], "conditions": {"python": ["*.py"]}}`
+	templateJSON := `{"ignore": ["ignored.txt", "ignored_dir/"], "raw": ["*.sh"], "conditions": {"python": ["*.py"]}, "merge_strategies": {"*.json": "json_deep_merge"}}`
 	if err := os.WriteFile(filepath.Join(repoDir, "template.json"), []byte(templateJSON), 0644); err != nil {
 		t.Fatal(err)
 	}
@@ -57,6 +57,17 @@ func setupTestEnvironment(t *testing.T) (string, string) {
 
 	// A conditional file
 	if err := os.WriteFile(filepath.Join(repoDir, "01.core", "fragments", "server.py"), []byte("import sys"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// Two json fragments to merge
+	if err := os.WriteFile(filepath.Join(repoDir, "01.core", "fragments", "test.json"), []byte(`{"a": 1, "b": {"c": 2}}`), 0644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(filepath.Join(repoDir, "02.ext", "fragments"), 0755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(repoDir, "02.ext", "fragments", "test.json"), []byte(`{"b": {"d": 3}, "e": "{{.ProjectName}}"}`), 0644); err != nil {
 		t.Fatal(err)
 	}
 
@@ -171,6 +182,15 @@ func TestE2E_JSONConfig(t *testing.T) {
 	}
 	if string(content) != "echo {{.ProjectName}}" {
 		t.Errorf("expected script.sh to remain raw 'echo {{.ProjectName}}', got %s", string(content))
+	}
+
+	// Verify deep merged JSON
+	content, err = os.ReadFile(filepath.Join(workDir, "test.json"))
+	if err != nil {
+		t.Fatalf("failed to read test.json: %v", err)
+	}
+	if !strings.Contains(string(content), `"a": 1`) || !strings.Contains(string(content), `"c": 2`) || !strings.Contains(string(content), `"d": 3`) || !strings.Contains(string(content), `"e": "JsonProject"`) {
+		t.Errorf("JSON deep merge failed. Got: %s", string(content))
 	}
 }
 

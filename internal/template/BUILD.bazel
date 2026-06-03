@@ -5,6 +5,7 @@ go_library(
     srcs = ["template.go"],
     importpath = "github.com/filmil/bzltool/internal/template",
     visibility = ["//:__subpackages__"],
+    deps = ["@in_gopkg_yaml_v3//:yaml_v3"],
 )
 
 go_test(
