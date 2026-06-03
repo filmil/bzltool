@@ -1,0 +1,2 @@
+# Load user specific settings if any
+try-import %workspace%/user.bazelrc

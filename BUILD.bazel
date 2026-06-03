@@ -1,0 +1,19 @@
+load("@gazelle//:def.bzl", "gazelle")
+load("@rules_go//go:def.bzl", "go_binary", "go_library")
+
+# gazelle:prefix github.com/filmil/bzltool
+gazelle(name = "gazelle")
+
+go_library(
+    name = "bzltool_lib",
+    srcs = ["main.go"],
+    importpath = "github.com/filmil/bzltool",
+    visibility = ["//visibility:private"],
+    deps = ["//cmd"],
+)
+
+go_binary(
+    name = "bzltool",
+    embed = [":bzltool_lib"],
+    visibility = ["//visibility:public"],
+)

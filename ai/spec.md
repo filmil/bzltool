@@ -55,7 +55,9 @@ The tool should be allowed to install AI skills as well on demand.
 * Bazel as build system.
 * Go as implementation language.
 * Go text templating as a way to generate files where necessary.
+* Public APIs documented based on go documentation standards
 * Git for version management.
+* Conventional commits v1.0.0 for git commit messages.
 * Bubbletea for TUI elements when used interactively.
 * Cobra library for flag and config management.
 * Every feature must have at least one unit test confirming its functionality,

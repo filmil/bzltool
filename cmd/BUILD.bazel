@@ -1,0 +1,17 @@
+load("@rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "cmd",
+    srcs = [
+        "init.go",
+        "root.go",
+    ],
+    importpath = "github.com/filmil/bzltool/cmd",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//internal/config",
+        "//internal/git",
+        "//internal/template",
+        "@com_github_spf13_cobra//:cobra",
+    ],
+)
