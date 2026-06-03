@@ -77,3 +77,69 @@ func PromptProjectName() (string, error) {
 
 	return "", fmt.Errorf("project name input was aborted")
 }
+
+// selectModel provides a TUI list selection
+type selectModel struct {
+	choices []string
+	cursor  int
+	choice  string
+	done    bool
+	err     error
+}
+
+func (m selectModel) Init() tea.Cmd { return nil }
+
+func (m selectModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "ctrl+c", "q", "esc":
+			return m, tea.Quit
+		case "up", "k":
+			if m.cursor > 0 {
+				m.cursor--
+			}
+		case "down", "j":
+			if m.cursor < len(m.choices)-1 {
+				m.cursor++
+			}
+		case "enter", " ":
+			m.choice = m.choices[m.cursor]
+			m.done = true
+			return m, tea.Quit
+		}
+	case error:
+		m.err = msg
+		return m, nil
+	}
+	return m, nil
+}
+
+func (m selectModel) View() string {
+	if m.done {
+		return ""
+	}
+	s := "Select a common configuration template:\n\n"
+	for i, choice := range m.choices {
+		cursor := " "
+		if m.cursor == i {
+			cursor = ">"
+		}
+		s += fmt.Sprintf("%s %s\n", cursor, choice)
+	}
+	s += "\n(press enter to select, esc to quit)\n"
+	return s
+}
+
+// PromptTemplate uses bubbletea to prompt the user to select from a list of options.
+func PromptTemplate(choices []string) (string, error) {
+	p := tea.NewProgram(selectModel{choices: choices})
+	m, err := p.Run()
+	if err != nil {
+		return "", err
+	}
+	if finalModel, ok := m.(selectModel); ok && finalModel.done {
+		return finalModel.choice, nil
+	}
+	return "", fmt.Errorf("template selection was aborted")
+}

@@ -16,6 +16,7 @@ import (
 var (
 	projectNameFlag string
 	configFlag      string
+	templateFlag    string
 )
 
 // Toolchain represents a project toolchain configuration.
@@ -31,14 +32,35 @@ type Module struct {
 	Type string `json:"type,omitempty"`
 }
 
+// InitSection represents the inner section of the JSON configuration.
+type InitSection struct {
+	ProjectName string      `json:"project_name"`
+	Languages   []string    `json:"languages,omitempty"`
+	Toolchains  []Toolchain `json:"toolchains,omitempty"`
+	Modules     []Module    `json:"modules,omitempty"`
+}
+
 // InitConfig represents the JSON configuration structure passed via --config.
 type InitConfig struct {
-	Init struct {
-		ProjectName string      `json:"project_name"`
-		Languages   []string    `json:"languages,omitempty"`
-		Toolchains  []Toolchain `json:"toolchains,omitempty"`
-		Modules     []Module    `json:"modules,omitempty"`
-	} `json:"init"`
+	Init InitSection `json:"init"`
+}
+
+var commonConfigs = map[string]InitSection{
+	"Standard Go Server": {
+		Languages:  []string{"go"},
+		Toolchains: []Toolchain{{Lang: "go", Version: "1.21"}},
+		Modules:    []Module{{Lang: "go", Name: "server"}},
+	},
+	"Python Data Science Project": {
+		Languages:  []string{"python"},
+		Toolchains: []Toolchain{{Lang: "python", Version: "3.11"}},
+		Modules:    []Module{{Lang: "python", Name: "data_science"}},
+	},
+	"C++ Library": {
+		Languages:  []string{"cpp"},
+		Toolchains: []Toolchain{{Lang: "cpp", Version: "17"}},
+		Modules:    []Module{{Lang: "cpp", Name: "lib"}},
+	},
 }
 
 // TemplateParams contains the parameters passed to text templates during fragment processing.
@@ -101,13 +123,35 @@ var initCmd = &cobra.Command{
 			if initCfg.Init.ProjectName != "" {
 				projName = initCfg.Init.ProjectName
 			}
-		}
+		} else {
+			templateName := templateFlag
+			// Only prompt for template interactively if neither flag was provided
+			if templateName == "" && projName == "" {
+				// Launch TUI to pick a template
+				choices := []string{"None (Empty)", "Standard Go Server", "Python Data Science Project", "C++ Library"}
+				choice, err := tui.PromptTemplate(choices)
+				if err != nil {
+					return err
+				}
+				if choice != "None (Empty)" {
+					templateName = choice
+				}
+			}
 
-		if projName == "" {
-			var err error
-			projName, err = tui.PromptProjectName()
-			if err != nil {
-				return err
+			if templateName != "" {
+				if common, ok := commonConfigs[templateName]; ok {
+					initCfg.Init = common
+				} else {
+					return fmt.Errorf("unknown template: %s", templateName)
+				}
+			}
+
+			if projName == "" {
+				var err error
+				projName, err = tui.PromptProjectName()
+				if err != nil {
+					return err
+				}
 			}
 		}
 
@@ -162,5 +206,6 @@ var initCmd = &cobra.Command{
 func init() {
 	initCmd.Flags().StringVar(&projectNameFlag, "project_name", "", "Name of the project to initialize")
 	initCmd.Flags().StringVar(&configFlag, "config", "", "Path to the JSON configuration file")
+	initCmd.Flags().StringVar(&templateFlag, "template", "", "Common configuration template to use (e.g. 'Standard Go Server', 'Python Data Science Project', 'C++ Library')")
 	rootCmd.AddCommand(initCmd)
 }

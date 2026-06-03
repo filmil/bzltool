@@ -373,3 +373,62 @@ name: CI for {{.}}
 		t.Errorf("ci.yaml missing github workflow language. Got: %s", string(content))
 	}
 }
+
+func TestE2E_CommonConfigs(t *testing.T) {
+	tmpDir, repoDir := setupTestEnvironment(t)
+	defer os.Unsetenv("XDG_CONFIG_HOME")
+
+	// Create fragments that use .Toolchains and .Languages
+	if err := os.MkdirAll(filepath.Join(repoDir, "01.core", "fragments", ".github", "workflows"), 0755); err != nil {
+		t.Fatal(err)
+	}
+	// MODULE.bazel template
+	moduleTmpl := `module(name = "{{.ProjectName}}")
+{{range .Toolchains}}
+go_sdk.download(version = "{{.Version}}")
+{{end}}
+`
+	if err := os.WriteFile(filepath.Join(repoDir, "01.core", "fragments", "MODULE.bazel"), []byte(moduleTmpl), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	gitAdd := exec.Command("git", "add", ".")
+	gitAdd.Dir = repoDir
+	if err := gitAdd.Run(); err != nil {
+		t.Fatal(err)
+	}
+
+	gitCommit := exec.Command("git", "-c", "user.name=Test", "-c", "user.email=test@example.com", "commit", "-m", "add templates")
+	gitCommit.Dir = repoDir
+	if err := gitCommit.Run(); err != nil {
+		t.Fatal(err)
+	}
+
+	bzltoolConfigDir := filepath.Join(tmpDir, ".config", "bzltool")
+	configContent := `{"template_repos": ["` + repoDir + `"]}`
+	if err := os.WriteFile(filepath.Join(bzltoolConfigDir, "config.json"), []byte(configContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	workDir := filepath.Join(tmpDir, "workdir_cc")
+	if err := os.MkdirAll(workDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+	originalWd, _ := os.Getwd()
+	os.Chdir(workDir)
+	defer os.Chdir(originalWd)
+
+	err := cmd.ExecuteWithArgs([]string{"init", "--template=Standard Go Server", "--project_name=TemplateProject", "--config="})
+	if err != nil {
+		t.Fatalf("ExecuteWithArgs failed: %v", err)
+	}
+
+	// Verify Toolchains integration
+	content, err := os.ReadFile(filepath.Join(workDir, "MODULE.bazel"))
+	if err != nil {
+		t.Fatalf("failed to read MODULE.bazel: %v", err)
+	}
+	if !strings.Contains(string(content), `go_sdk.download(version = "1.21")`) {
+		t.Errorf("MODULE.bazel missing toolchain version 1.21 from template. Got: %s", string(content))
+	}
+}
